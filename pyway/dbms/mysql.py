@@ -44,12 +44,13 @@ class Mysql():
     def create_version_table_if_not_exists(self) -> None:
         self.execute(CREATE_VERSION_MIGRATIONS % self.version_table)
 
-    def execute(self, script: str) -> None:
+    def execute(self, script: str, commit=True) -> None:
         cnx = self.connect()
         for _ in cnx.cmd_query_iter(script):
             pass
-        cnx.commit()
-        cnx.close()
+        if commit:
+            cnx.commit()
+            cnx.close()
 
     def get_all_schema_migrations(self) -> List[Migration]:
         cnx = self.connect()
@@ -82,7 +83,7 @@ class Mysql():
         self.execute(UPDATE_CHECKSUM % (self.version_table, migration.checksum, migration.version))
 
     def lock(self) -> None:
-        self.execute("LOCK TABLES %s WRITE;" % self.version_table)
+        self.execute("LOCK TABLES %s WRITE;" % self.version_table, commit=False)
     
     def unlock(self) -> None:
         self.execute("UNLOCK TABLES;")
