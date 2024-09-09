@@ -72,3 +72,9 @@ class Sqlite():
 
     def update_checksum(self, migration: Migration) -> None:
         self.execute(UPDATE_CHECKSUM % (self.version_table, migration.checksum, migration.version))
+
+    def lock(self) -> None:
+        return
+    
+    def unlock(self) -> None:
+        return

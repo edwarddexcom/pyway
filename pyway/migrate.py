@@ -17,23 +17,27 @@ class Migrate():
         self.args = args
 
     def run(self) -> str:
-        output = ''
-        migrations_to_be_executed = self._get_migration_files_to_be_executed()
-        if not migrations_to_be_executed:
-            output += Utils.color("Nothing to do\n", bcolors.FAIL)
-            return output
+        try:
+            self._db.lock()
+            output = ''
+            migrations_to_be_executed = self._get_migration_files_to_be_executed()
+            if not migrations_to_be_executed:
+                output += Utils.color("Nothing to do\n", bcolors.FAIL)
+                return output
 
-        for migration in migrations_to_be_executed:
-            output += Utils.color(f"Migrating --> {migration.name}\n", bcolors.OKBLUE)
-            try:
-                with open(os.path.join(os.getcwd(),
-                          self.migration_dir, migration.name), "r", encoding='utf-8') as sqlfile:
-                    self._db.execute(sqlfile.read())
-                self._db.upgrade_version(migration)
-                output += Utils.color(f"{migration.name} SUCCESS\n", bcolors.OKBLUE)
-            except Exception as error:
-                raise RuntimeError(error)
-        return output
+            for migration in migrations_to_be_executed:
+                output += Utils.color(f"Migrating --> {migration.name}\n", bcolors.OKBLUE)
+                try:
+                    with open(os.path.join(os.getcwd(),
+                            self.migration_dir, migration.name), "r", encoding='utf-8') as sqlfile:
+                        self._db.execute(sqlfile.read())
+                    self._db.upgrade_version(migration)
+                    output += Utils.color(f"{migration.name} SUCCESS\n", bcolors.OKBLUE)
+                except Exception as error:
+                    raise RuntimeError(error)
+            return output
+        finally:
+            self._db.unlock()
 
     def _get_migration_files_to_be_executed(self) -> List:
         all_local_migrations = self._get_all_local_migrations()
